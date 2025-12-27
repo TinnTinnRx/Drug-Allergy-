@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบประเมินการแพ้ยา - Naranjo Algorithm</title>
+
+  <!--
+    Font: ใช้ Sarabun จาก Google Fonts แต่ตั้งชื่อใช้งานเป็น "SarabunNew"
+    (เพื่อให้ทั้งหน้าเว็บและไฟล์ PDF ใช้ฟอนต์เดียวกัน)
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- html2pdf.js (รวม html2canvas + jsPDF) สำหรับ export เป็น PDF -->
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+    integrity="sha512-GsLlZN/3F2ErCz9YgSg7i3qIYp8yq6qYV7z9Y0kVh2p2LQmZ8p0QO2VqgQmHh1d7xw8o3bXn4cNwKQO8w2r1xg=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
+
+  <style>
+    /* Map Sarabun -> SarabunNew (ตาม requirement) */
+    :root {
+      --font-main: "SarabunNew", "Sarabun", "Segoe UI", Tahoma, sans-serif;
+      --primary: #667eea;
+      --primary-dark: #5568d3;
+      --danger: #dc3545;
+      --warning: #fd7e14;
+      --info: #ffc107;
+      --success: #28a745;
+    }
+
+    @font-face {
+      font-family: "SarabunNew";
+      font-style: normal;
+      font-weight: 300;
+      src: local("Sarabun Light"), local("Sarabun");
+    }
+    @font-face {
+      font-family: "SarabunNew";
+      font-style: normal;
+      font-weight: 400;
+      src: local("Sarabun Regular"), local("Sarabun");
+    }
+    @font-face {
+      font-family: "SarabunNew";
+      font-style: normal;
+      font-weight: 500;
+      src: local("Sarabun Medium"), local("Sarabun");
+    }
+    @font-face {
+      font-family: "SarabunNew";
+      font-style: normal;
+      font-weight: 600;
+      src: local("Sarabun SemiBold"), local("Sarabun");
+    }
+    @font-face {
+      font-family: "SarabunNew";
+      font-style: normal;
+      font-weight: 700;
+      src: local("Sarabun Bold"), local("Sarabun");
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      padding: 30px;
+    }
+
+    h1 {
+      color: var(--primary);
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid var(--primary);
+    }
+
+    .section-title {
+      color: #333;
+      font-size: 20px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #555;
+      font-weight: 500;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="tel"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+      font-family: var(--font-main);
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 15px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 15px;
+    }
+
+    .drug-entry {
+      background: white;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      position: relative;
+    }
+
+    .drug-entry-title {
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+
+    .add-btn,
+    .remove-btn,
+    .submit-btn,
+    .secondary-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      transition: all 0.3s;
+      font-family: var(--font-main);
+    }
+
+    .add-btn {
+      background: #28a745;
+      color: white;
+      margin-top: 10px;
+    }
+    .add-btn:hover {
+      background: #218838;
+    }
+
+    .secondary-btn {
+      background: #0d6efd;
+      color: white;
+      margin-top: 10px;
+    }
+    .secondary-btn:hover {
+      background: #0b5ed7;
+    }
+
+    .remove-btn {
+      background: #dc3545;
+      color: white;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 5px 15px;
+      font-size: 14px;
+    }
+    .remove-btn:hover {
+      background: #c82333;
+    }
+
+    .submit-btn {
+      background: var(--primary);
+      color: white;
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      margin-top: 20px;
+    }
+    .submit-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .question {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+
+    .question-text {
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .radio-option input[type="radio"] {
+      width: auto;
+      cursor: pointer;
+    }
+
+    .radio-option label {
+      margin: 0;
+      cursor: pointer;
+      font-weight: normal;
+    }
+
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .symptom-card {
+      background: white;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      user-select: none;
+    }
+
+    .symptom-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    }
+
+    .symptom-card.selected {
+      border-color: var(--primary);
+      background: #e7f3ff;
+    }
+
+    .symptom-card input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+    }
+
+    .symptom-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .symptom-name::before {
+      content: "☐";
+      font-size: 20px;
+      color: #999;
+    }
+
+    .symptom-card.selected .symptom-name::before {
+      content: "☑";
+      color: var(--primary);
+    }
+
+    .symptom-description {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    .severity-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 6px;
+      white-space: nowrap;
+    }
+
+    .severity-mild {
+      background: #d4edda;
+      color: #155724;
+    }
+    .severity-moderate {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .severity-severe {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .severity-emergency {
+      background: #dc3545;
+      color: white;
+    }
+
+    .info-icon {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 16px;
+      font-size: 12px;
+      cursor: help;
+      margin-left: 5px;
+    }
+
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 320px;
+      background-color: #333;
+      color: #fff;
+      text-align: left;
+      border-radius: 6px;
+      padding: 10px;
+      position: absolute;
+      z-index: 2;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -160px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .result {
+      display: none;
+      background: #e7f3ff;
+      padding: 25px;
+      border-radius: 10px;
+      margin-top: 30px;
+      border: 2px solid var(--primary);
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .result-title {
+      color: var(--primary);
+      font-size: 24px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .result-content {
+      font-size: 16px;
+      color: #333;
+      text-align: center;
+    }
+
+    .score-box {
+      background: var(--primary);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .patient-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+
+    .alert {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
+      padding: 12px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 10px;
+      background: white;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px dashed #c7d2fe;
+      color: #555;
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.65);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .result-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .btn-print {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 10px 30px;
+      font-family: var(--font-main);
+    }
+    .btn-print:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-pdf {
+      background: #111827;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 10px 30px;
+      font-family: var(--font-main);
+    }
+    .btn-pdf:hover {
+      background: #0b1220;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .container {
+        box-shadow: none;
+        border-radius: 0;
+        padding: 16px;
+        max-width: 100%;
+      }
+      .submit-btn,
+      .add-btn,
+      .secondary-btn,
+      .remove-btn,
+      .result-actions {
+        display: none !important;
+      }
+      .section {
+        background: white;
+        border-left: none;
+        padding: 10px 0;
+      }
+      .alert {
+        background: white;
+        border: 1px solid #ddd;
+      }
+      .result {
+        border: none;
+        background: white;
+        padding: 0;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .checkbox-grid {
+        grid-template-columns: 1fr;
+      }
+      .patient-info {
+        grid-template-columns: 1fr;
+      }
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🏥 ระบบประเมินการแพ้ยา</h1>
+    <p class="subtitle">Naranjo Adverse Drug Reaction Probability Scale</p>
+
+    <form id="assessmentForm">
+      <!-- ข้อมูลผู้ป่วย -->
+      <div class="section">
+        <h2 class="section-title">📋 ข้อมูลผู้ป่วย</h2>
+        <div class="patient-info">
+          <div class="form-group">
+            <label for="hn">HN:</label>
+            <input type="text" id="hn" name="hn" required />
+          </div>
+          <div class="form-group">
+            <label for="firstName">ชื่อ:</label>
+            <input type="text" id="firstName" name="firstName" required />
+          </div>
+          <div class="form-group">
+            <label for="lastName">นามสกุล:</label>
+            <input type="text" id="lastName" name="lastName" required />
+          </div>
+          <div class="form-group">
+            <label for="phone">เบอร์โทรศัพท์:</label>
+            <input type="tel" id="phone" name="phone" required />
+          </div>
+        </div>
+      </div>
+
+      <!-- อาการผื่นแพ้ยา -->
+      <div class="section">
+        <h2 class="section-title">💊 ประเภทผื่นแพ้ยา</h2>
+        <div class="alert">
+          กรุณาเลือกประเภทผื่นแพ้ยาที่พบ (เลือกได้มากกว่า 1 ข้อ) - คลิกที่การ์ดเพื่อดูรายละเอียด
+        </div>
+
+        <div class="checkbox-grid" id="symptomsGrid">
+          <!-- Maculopapular rash -->
+          <div class="symptom-card" onclick="toggleSymptomCard(this)">
+            <input type="checkbox" id="symp1" name="symptoms" value="Maculopapular rash (MP rash)" data-sev="mild" />
+            <div class="symptom-name">
+              Maculopapular rash (MP rash)
+              <span class="tooltip">
+                <span class="info-icon">i</span>
+                <span class="tooltiptext">
+                  <strong>ลักษณะ:</strong> ผื่นราบและตุ่มนูนสีแดงผสมกัน<br />
+                  <strong>การกระจาย:</strong> กระจายสมมาตร 2 ข้าง<br />
+                  <strong>อาการร่วม:</strong> อาจมีไข้ คันเล็กน้อย
+                </span>
+              </span>
+            </div>
+            <div class="symptom-description">ผื่นราบและตุ่มนูนสีแดงผสมกัน - พบบ่อยที่สุด</div>
+            <span class="severity-badge severity-mild">บ่อยที่สุด</span>
+          </div>
+
+          <!-- Urticaria -->
+          <div class="symptom-card" onclick="toggleSymptomCard(this)">
+            <input type="checkbox" id="symp2" name="symptoms" value="Urticaria (ลมพิษ)" data-sev="moderate" />
+            <div class="symptom-name">
+              Urticaria (ลมพิษ)
+              <span class="tooltip">
+                <span class="info-icon">i</span>
+                <span class="tooltiptext">
+                  <strong>ลักษณะ:</strong> ผื่นนูนแดง ขอบชัด<br />
+                  <strong>ลักษณะสำคัญ:</strong> ยุบหายเองภายใน 24 ชม.<br />
+                  <strong>ข้อควรระวัง:</strong> อาจพัฒนาเป็น anaphylaxis
+                </span>
+              </span>
+            </div>
+            <div class="symptom-description">ผื่นนูนแดง ขอบชัด คันมาก ยุบหายภายใน 24 ชม.</div>
+            <span class="severity-badge severity-moderate">ระวัง</span>
+          </div>
+
+          <!-- Angioedema -->
+          <div class="symptom-card" onclick="toggleSymptomCard(this)">
+            <input type="checkbox" id="symp3" name="symptoms" value="Angioedema" data-sev="emergency" />
+            <div class="symptom-name">
+              Angioedema
+              <span class="tooltip">
+                <span class="info-icon">i</span>
+                <span class="tooltiptext">
+                  <strong>ลักษณะ:</strong> บวมลึกใต้ผิวหนัง<br />
+                  <strong>ตำแหน่ง:</strong> ริมฝีปาก เปลือกตา ลิ้น ใบหน้า<br />
+                  <strong>ความสำคัญ:</strong> อาจร่วมกับ anaphylactic shock
+                </span>
+              </span>
+            </div>
+            <div class="symptom-description">บวมลึกใต้ผิวหนัง บริเวณปาก ตา ลิ้น</div>
+            <span class="severity-badge severity-emergency">ฉุกเฉิน</span>
+          </div>
+
+          <!-- Fixed Drug Eruption -->
+          <div class="symptom-card" onclick="toggleSymptomCard(this)">
+            <input type="checkbox" id="symp4" name="symptoms" value="Fixed Drug Eruption" data-sev="mild" />
+            <div class="symptom-name">
+              Fixed Drug Eruption
+              <span class="tooltip">
+                <span class="info-icon">i</span>
+                <span class="tooltiptext">
+                  <strong>ลักษณะ:</strong> ผื่นกลม/รี สีแดงคล้ำ/ม่วง<br />
+                  <strong>ลักษณะเฉพาะ:</strong> เกิดซ้ำที่ตำแหน่งเดิม<br />
+                  <strong>หลังหาย:</strong> มักทิ้งรอยดำ
+                </span>
+              </span>
+            </div>
+            <div class="symptom-description">ผื่นกลม/รี สีคล้ำ เกิดซ้ำที่เดิม ทิ้งรอยดำ</div>
+            <span class="severity-badge severity-mild">ทิ้งรอย</span>
+          </div>
+
+          <!-- Exfoliative dermatitis -->
+          <div class="symptom-card" onclick="toggleSymptomCard(this)">
+            <input type="checkbox" id="symp5" name="symptoms" value="Exfoliative dermatitis" data-sev="severe" />
+            <div class="symptom-name">
+              Exfoliative dermatitis
+              <span class="tooltip">
+                <span class="info-icon">i</span>
+                <span class="tooltiptext">
+                  <strong>ลักษณะ:</strong> ผิวหนังแดงลอกเป็นขุยทั่วร่างกาย<br />
+                  <strong>อาการร่วม:</strong> คัน แห้ง หนาวสั่น<br />
+                  <strong>ความรุนแรง:</strong> เฝ้าระวังภาวะแทรกซ้อน
+                </span>
+              </span>
+            </div>
+            <div class="symptom-description">ผิวหนังแดงลอกเป็นขุยทั่วตัว สูญเสียน้ำและโปรตีน</div>
+            <span class="severity-badge severity-severe">รุนแรง</span>
+          </div>
+
+          <!-- Erythema multiforme -->
+          <div class="symptom-card" onclick="toggleSymptomCard(this)">
+            <input type="checkbox" id="symp6" name="symptoms" value="Erythema multiforme (EM)" data-sev="moderate" />
+            <div class="symptom-name">
+              Erythema multiforme (EM)
+              <span class="tooltip">
+                <span class="info-icon">i</span>
+                <span class="tooltiptext">
+                  <strong>ลักษณะ:</strong> ผื่นเป้าธนู (target lesion)<br />
+                  <strong>ตำแหน่ง:</strong> แขน ขา ฝ่ามือ ฝ่าเท้า<br />
+                  <strong>สาเหตุร่วม:</strong> การติดเชื้อ (HSV) หรือยา
+                </span>
+              </span>
+            </div>
+            <div class="symptom-description">ผื่นรูปเป้าธนู ที่แขน ขา ฝ่ามือ ฝ่าเท้า</div>
+            <span class="severity-badge severity-moderate">ปานกลาง</span>
+          </div>
+
+          <!-- SJS -->
+          <div class="symptom-card" onclick="toggleSymptomCard(this)">
+            <input type="checkbox" id="symp7" name="symptoms" value="Stevens-Johnson Syndrome (SJS)" data-sev="emergency" />
+            <div class="symptom-name">
+              Stevens-Johnson Syndrome (SJS)
+              <span class="tooltip">
+                <span class="info-icon">i</span>
+                <span class="tooltiptext">
+                  <strong>ลักษณะ:</strong> ผื่นรุนแรง ลอกผิวหนังและเยื่อบุ<br />
+                  <strong>อวัยวะ:</strong> ตา ปาก อวัยวะเพศ<br />
+                  <strong>ความรุนแรง:</strong> ภาวะฉุกเฉินทางการแพทย์
+                </span>
+              </span>
+            </div>
+            <div class="symptom-description">ผื่นรุนแรง ลอกผิวหนังและเยื่อบุ - ฉุกเฉิน!</div>
+            <span class="severity-badge severity-emergency">ฉุกเฉิน!</span>
+          </div>
+
+          <!-- TEN -->
+          <div class="symptom-card" onclick="toggleSymptomCard(this)">
+            <input type="checkbox" id="symp8" name="symptoms" value="Toxic Epidermal Necrolysis (TEN)" data-sev="emergency" />
+            <div class="symptom-name">
+              Toxic Epidermal Necrolysis (TEN)
+              <span class="tooltip">
+                <span class="info-icon">i</span>
+                <span class="tooltiptext">
+                  <strong>ลักษณะ:</strong> ผิวหนังลอก &gt;30% ของร่างกาย<br />
+                  <strong>ลักษณะสำคัญ:</strong> Nikolsky's sign บวก<br />
+                  <strong>อัตราตาย:</strong> สูง ต้องรักษาใน ICU/Burn unit
+                </span>
+              </span>
+            </div>
+            <div class="symptom-description">ผิวหนังลอก &gt;30% อัตราตายสูง ICU/Burn unit</div>
+            <span class="severity-badge severity-emergency">อันตราย!</span>
+          </div>
+        </div>
+
+        <div class="legend">
+          <div class="legend-item"><span class="severity-badge severity-mild">บ่อยที่สุด/ทิ้งรอย</span></div>
+          <div class="legend-item"><span class="severity-badge severity-moderate">ระวัง/ปานกลาง</span></div>
+          <div class="legend-item"><span class="severity-badge severity-severe">รุนแรง</span></div>
+          <div class="legend-item"><span class="severity-badge severity-emergency">ฉุกเฉิน/อันตราย</span></div>
+        </div>
+
+        <!-- เพิ่มอาการอื่นๆ เอง -->
+        <div style="margin-top: 18px; background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:600; color:#111827; font-size:16px;">➕ เพิ่มอาการแพ้ยาอื่นๆ (Custom)</div>
+              <div class="muted">ผู้ใช้สามารถเพิ่มการ์ดอาการเองได้ (จะถูกบันทึกเฉพาะในหน้านี้ ไม่ได้ส่งออกไปที่ใด)</div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top: 12px;">
+            <div class="form-group">
+              <label for="customSymptomName">ชื่ออาการ/ผื่น:</label>
+              <input type="text" id="customSymptomName" placeholder="เช่น Drug-induced pruritus / ผื่นคันหลังใช้ยา" />
+            </div>
+            <div class="form-group">
+              <label for="customSymptomSeverity">ระดับความรุนแรง (ป้ายกำกับ):</label>
+              <select id="customSymptomSeverity">
+                <option value="mild">บ่อยที่สุด/ทิ้งรอย (mild)</option>
+                <option value="moderate">ระวัง/ปานกลาง (moderate)</option>
+                <option value="severe">รุนแรง (severe)</option>
+                <option value="emergency">ฉุกเฉิน/อันตราย (emergency)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="customSymptomDesc">รายละเอียด (ไม่บังคับ):</label>
+            <textarea id="customSymptomDesc" placeholder="ลักษณะผื่น/อาการร่วม/ข้อควรระวัง..."></textarea>
+          </div>
+
+          <button type="button" class="secondary-btn" onclick="addCustomSymptom()">เพิ่มอาการ</button>
+        </div>
+      </div>
+
+      <!-- รายการยาที่สงสัย -->
+      <div class="section">
+        <h2 class="section-title">💊 รายการยาที่สงสัย</h2>
+        <div id="drugsContainer">
+          <div class="drug-entry">
+            <div class="drug-entry-title">ยาที่ 1</div>
+            <div class="form-group">
+              <label>ชื่อยา:</label>
+              <input type="text" name="drugName[]" required />
+            </div>
+            <div class="form-group">
+              <label>วันที่ได้รับยา:</label>
+              <input type="date" name="drugDate[]" required />
+            </div>
+          </div>
+        </div>
+        <button type="button" class="add-btn" onclick="addDrugEntry()">➕ เพิ่มรายการยา</button>
+      </div>
+
+      <!-- ระดับความรุนแรง -->
+      <div class="section">
+        <h2 class="section-title">⚠️ ระดับความรุนแรงของอาการ</h2>
+        <div class="form-group">
+          <select id="severity" name="severity" required>
+            <option value="">-- เลือกระดับความรุนแรง --</option>
+            <option value="เล็กน้อย">เล็กน้อย (Mild)</option>
+            <option value="ปานกลาง">ปานกลาง (Moderate)</option>
+            <option value="รุนแรง">รุนแรง (Severe)</option>
+            <option value="คุกคามชีวิต">คุกคามชีวิต (Life-threatening)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Naranjo Algorithm Questions -->
+      <div class="section">
+        <h2 class="section-title">📝 แบบประเมิน Naranjo Algorithm</h2>
+        <div class="alert">กรุณาตอบคำถามทั้ง 10 ข้อ เพื่อประเมินความเป็นไปได้ของการแพ้ยา</div>
+
+        <!-- Q1 -->
+        <div class="question">
+          <div class="question-text">1. มีรายงานการแพ้ยาชนิดนี้มาก่อนหรือไม่?</div>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="q1_yes" name="q1" value="ใช่" required />
+              <label for="q1_yes">ใช่ (+1)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q1_no" name="q1" value="ไม่ใช่" />
+              <label for="q1_no">ไม่ใช่ (0)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q1_unknown" name="q1" value="ไม่ทราบ" />
+              <label for="q1_unknown">ไม่ทราบ (0)</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="question">
+          <div class="question-text">2. อาการเกิดขึ้นหลังจากได้รับยาที่สงสัยหรือไม่?</div>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="q2_yes" name="q2" value="ใช่" required />
+              <label for="q2_yes">ใช่ (+2)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q2_no" name="q2" value="ไม่ใช่" />
+              <label for="q2_no">ไม่ใช่ (-1)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q2_unknown" name="q2" value="ไม่ทราบ" />
+              <label for="q2_unknown">ไม่ทราบ (0)</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="question">
+          <div class="question-text">3. อาการดีขึ้นเมื่อหยุดยาหรือให้ยาต้านพิษหรือไม่?</div>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="q3_yes" name="q3" value="ใช่" required />
+              <label for="q3_yes">ใช่ (+1)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q3_no" name="q3" value="ไม่ใช่" />
+              <label for="q3_no">ไม่ใช่ (0)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q3_unknown" name="q3" value="ไม่ทราบ" />
+              <label for="q3_unknown">ไม่ทราบ (0)</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="question">
+          <div class="question-text">4. อาการกลับมาอีกเมื่อให้ยาซ้ำหรือไม่?</div>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="q4_yes" name="q4" value="ใช่" required />
+              <label for="q4_yes">ใช่ (+2)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q4_no" name="q4" value="ไม่ใช่" />
+              <label for="q4_no">ไม่ใช่ (-1)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q4_unknown" name="q4" value="ไม่ทราบ" />
+              <label for="q4_unknown">ไม่ทราบ (0)</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="question">
+          <div class="question-text">5. มีสาเหตุอื่นที่อาจทำให้เกิดอาการนี้ได้หรือไม่?</div>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="q5_yes" name="q5" value="ใช่" required />
+              <label for="q5_yes">ใช่ (-1)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q5_no" name="q5" value="ไม่ใช่" />
+              <label for="q5_no">ไม่ใช่ (+2)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q5_unknown" name="q5" value="ไม่ทราบ" />
+              <label for="q5_unknown">ไม่ทราบ (0)</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q6 -->
+        <div class="question">
+          <div class="question-text">6. อาการกลับมาเมื่อให้ยาหลอกหรือไม่?</div>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="q6_yes" name="q6" value="ใช่" required />
+              <label for="q6_yes">ใช่ (-1)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q6_no" name="q6" value="ไม่ใช่" />
+              <label for="q6_no">ไม่ใช่ (+1)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q6_unknown" name="q6" value="ไม่ทราบ" />
+              <label for="q6_unknown">ไม่ทราบ (0)</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q7 -->
+        <div class="question">
+          <div class="question-text">7. ตรวจพบยาในเลือดหรือของเหลวในร่างกายในระดับที่เป็นพิษหรือไม่?</div>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="q7_yes" name="q7" value="ใช่" required />
+              <label for="q7_yes">ใช่ (+1)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q7_no" name="q7" value="ไม่ใช่" />
+              <label for="q7_no">ไม่ใช่ (0)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q7_unknown" name="q7" value="ไม่ทราบ" />
+              <label for="q7_unknown">ไม่ทราบ (0)</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q8 -->
+        <div class="question">
+          <div class="question-text">8. อาการรุนแรงขึ้นเมื่อเพิ่มขนาดยา หรือเบาลงเมื่อลดขนาดยาหรือไม่?</div>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="q8_yes" name="q8" value="ใช่" required />
+              <label for="q8_yes">ใช่ (+1)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q8_no" name="q8" value="ไม่ใช่" />
+              <label for="q8_no">ไม่ใช่ (0)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q8_unknown" name="q8" value="ไม่ทราบ" />
+              <label for="q8_unknown">ไม่ทราบ (0)</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q9 -->
+        <div class="question">
+          <div class="question-text">9. ผู้ป่วยเคยมีอาการคล้ายคลึงกันกับยาตัวนี้หรือยาที่คล้ายกันมาก่อนหรือไม่?</div>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="q9_yes" name="q9" value="ใช่" required />
+              <label for="q9_yes">ใช่ (+1)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q9_no" name="q9" value="ไม่ใช่" />
+              <label for="q9_no">ไม่ใช่ (0)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q9_unknown" name="q9" value="ไม่ทราบ" />
+              <label for="q9_unknown">ไม่ทราบ (0)</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q10 -->
+        <div class="question">
+          <div class="question-text">10. มีหลักฐานอื่นที่แสดงว่าเป็นการแพ้ยาหรือไม่?</div>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="q10_yes" name="q10" value="ใช่" required />
+              <label for="q10_yes">ใช่ (+1)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q10_no" name="q10" value="ไม่ใช่" />
+              <label for="q10_no">ไม่ใช่ (0)</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="q10_unknown" name="q10" value="ไม่ทราบ" />
+              <label for="q10_unknown">ไม่ทราบ (0)</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ผู้ประเมิน (เภสัชกร) -->
+      <div class="section">
+        <h2 class="section-title">👩‍⚕️ ผู้ประเมิน (เภสัชกร)</h2>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="assessorName">ชื่อ-นามสกุลผู้ประเมิน:</label>
+            <input type="text" id="assessorName" name="assessorName" placeholder="เช่น ภก.บรรณสรณ์ เตชะจำเริญสุข" required />
+          </div>
+          <div class="form-group">
+            <label for="assessorLicense">เลขใบอนุญาต (ถ้ามี):</label>
+            <input type="text" id="assessorLicense" name="assessorLicense" placeholder="เช่น ภ.12345 (ไม่บังคับ)" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="assessorNote">หมายเหตุผู้ประเมิน (ถ้ามี):</label>
+          <textarea id="assessorNote" name="assessorNote" placeholder="เช่น ประวัติแพ้ยาเดิม/ข้อมูลเพิ่มเติม/ข้อสังเกตทางคลินิก"></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn">📊 ประเมินผล</button>
+    </form>
+
+    <!-- ผลการประเมิน -->
+    <div id="result" class="result">
+      <h2 class="result-title">ผลการประเมิน</h2>
+
+      <!-- ส่วนที่ใช้สำหรับ Export PDF -->
+      <div id="pdfArea">
+        <div id="resultContent" class="result-content"></div>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn-print" onclick="window.print()">🖨️ พิมพ์ผลการประเมิน</button>
+        <button class="btn-pdf" onclick="exportPDF()">📄 ดาวน์โหลดรายงาน PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let drugCount = 1;
+    let customSymptomCount = 0;
+
+    // ========== Symptom Card Toggle (รองรับ dynamic) ==========
+    function toggleSymptomCard(card) {
+      const checkbox = card.querySelector('input[type="checkbox"]');
+      if (!checkbox) return;
+
+      checkbox.checked = !checkbox.checked;
+      card.classList.toggle("selected", checkbox.checked);
+    }
+
+    // ========== Add Custom Symptom ==========
+    function addCustomSymptom() {
+      const nameEl = document.getElementById("customSymptomName");
+      const sevEl = document.getElementById("customSymptomSeverity");
+      const descEl = document.getElementById("customSymptomDesc");
+
+      const name = (nameEl.value || "").trim();
+      const sev = sevEl.value; // mild/moderate/severe/emergency
+      const desc = (descEl.value || "").trim();
+
+      if (!name) {
+        alert("กรุณากรอกชื่ออาการ/ผื่นก่อนเพิ่ม");
+        nameEl.focus();
+        return;
+      }
+
+      customSymptomCount++;
+      const symptomsGrid = document.getElementById("symptomsGrid");
+
+      const id = `custom_symp_${customSymptomCount}`;
+      const badge = severityBadgeLabel(sev);
+      const badgeClass = severityBadgeClass(sev);
+      const sevText = severityThai(sev);
+
+      const card = document.createElement("div");
+      card.className = "symptom-card";
+      card.setAttribute("onclick", "toggleSymptomCard(this)");
+
+      // หมายเหตุ: เก็บ data-sev เพื่อใช้ตรวจ “ฉุกเฉิน” ได้
+      card.innerHTML = `
+        <input type="checkbox" id="${id}" name="symptoms" value="${escapeHtml(name)}" data-sev="${sev}" />
+        <div class="symptom-name">
+          ${escapeHtml(name)}
+          <span class="tooltip">
+            <span class="info-icon">i</span>
+            <span class="tooltiptext">
+              <strong>ระดับความรุนแรง:</strong> ${sevText}<br/>
+              ${desc ? `<strong>รายละเอียด:</strong> ${escapeHtml(desc).replace(/\n/g, "<br/>")}` : `<span class="muted">ไม่มีรายละเอียดเพิ่มเติม</span>`}
+            </span>
+          </span>
+        </div>
+        <div class="symptom-description">${desc ? escapeHtml(desc).replace(/\n/g, " ") : "อาการที่ผู้ใช้เพิ่มเอง"}</div>
+        <span class="severity-badge ${badgeClass}">${badge}</span>
+      `;
+
+      symptomsGrid.appendChild(card);
+
+      // reset
+      nameEl.value = "";
+      descEl.value = "";
+      sevEl.value = "mild";
+    }
+
+    function severityThai(sev) {
+      if (sev === "emergency") return "ฉุกเฉิน/อันตราย";
+      if (sev === "severe") return "รุนแรง";
+      if (sev === "moderate") return "ระวัง/ปานกลาง";
+      return "บ่อยที่สุด/ทิ้งรอย";
+    }
+
+    function severityBadgeLabel(sev) {
+      if (sev === "emergency") return "ฉุกเฉิน/อันตราย";
+      if (sev === "severe") return "รุนแรง";
+      if (sev === "moderate") return "ระวัง/ปานกลาง";
+      return "บ่อยที่สุด/ทิ้งรอย";
+    }
+
+    function severityBadgeClass(sev) {
+      if (sev === "emergency") return "severity-emergency";
+      if (sev === "severe") return "severity-severe";
+      if (sev === "moderate") return "severity-moderate";
+      return "severity-mild";
+    }
+
+    // ========== Drug Entries ==========
+    function addDrugEntry() {
+      drugCount++;
+      const container = document.getElementById("drugsContainer");
+      const newEntry = document.createElement("div");
+      newEntry.className = "drug-entry";
+      newEntry.innerHTML = `
+        <button type="button" class="remove-btn" onclick="removeDrugEntry(this)">✖ ลบ</button>
+        <div class="drug-entry-title">ยาที่ ${drugCount}</div>
+        <div class="form-group">
+          <label>ชื่อยา:</label>
+          <input type="text" name="drugName[]" required />
+        </div>
+        <div class="form-group">
+          <label>วันที่ได้รับยา:</label>
+          <input type="date" name="drugDate[]" required />
+        </div>
+      `;
+      container.appendChild(newEntry);
+    }
+
+    function removeDrugEntry(button) {
+      if (document.querySelectorAll(".drug-entry").length > 1) {
+        button.parentElement.remove();
+        updateDrugNumbers();
+      } else {
+        alert("ต้องมีรายการยาอย่างน้อย 1 รายการ");
+      }
+    }
+
+    function updateDrugNumbers() {
+      const entries = document.querySelectorAll(".drug-entry");
+      entries.forEach((entry, index) => {
+        entry.querySelector(".drug-entry-title").textContent = `ยาที่ ${index + 1}`;
+      });
+      drugCount = entries.length;
+    }
+
+    // ========== Naranjo Algorithm Scoring ==========
+    const SCORING = {
+      1: { "ใช่": 1, "ไม่ใช่": 0, "ไม่ทราบ": 0 },
+      2: { "ใช่": 2, "ไม่ใช่": -1, "ไม่ทราบ": 0 },
+      3: { "ใช่": 1, "ไม่ใช่": 0, "ไม่ทราบ": 0 },
+      4: { "ใช่": 2, "ไม่ใช่": -1, "ไม่ทราบ": 0 },
+      5: { "ใช่": -1, "ไม่ใช่": 2, "ไม่ทราบ": 0 },
+      6: { "ใช่": -1, "ไม่ใช่": 1, "ไม่ทราบ": 0 },
+      7: { "ใช่": 1, "ไม่ใช่": 0, "ไม่ทราบ": 0 },
+      8: { "ใช่": 1, "ไม่ใช่": 0, "ไม่ทราบ": 0 },
+      9: { "ใช่": 1, "ไม่ใช่": 0, "ไม่ทราบ": 0 },
+      10: { "ใช่": 1, "ไม่ใช่": 0, "ไม่ทราบ": 0 },
+    };
+
+    // ========== Submit Handler ==========
+    document.getElementById("assessmentForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      // patient info
+      const hn = document.getElementById("hn").value.trim();
+      const firstName = document.getElementById("firstName").value.trim();
+      const lastName = document.getElementById("lastName").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+
+      // assessor
+      const assessorName = document.getElementById("assessorName").value.trim();
+      const assessorLicense = document.getElementById("assessorLicense").value.trim();
+      const assessorNote = document.getElementById("assessorNote").value.trim();
+
+      // symptoms (value + severity)
+      const checkedSymptomInputs = Array.from(document.querySelectorAll('input[name="symptoms"]:checked'));
+      const selectedSymptoms = checkedSymptomInputs.map((cb) => cb.value);
+      const symptomsText = selectedSymptoms.length > 0 ? selectedSymptoms.join(", ") : "ไม่ระบุ";
+
+      // Determine emergency symptom
+      const hasEmergencySymptom = checkedSymptomInputs.some((cb) => {
+        const v = (cb.value || "").toUpperCase();
+        const sev = cb.getAttribute("data-sev") || "";
+        return (
+          sev === "emergency" ||
+          v.includes("SJS") ||
+          v.includes("TEN") ||
+          v.includes("ANGIOEDEMA") ||
+          v.includes("ANAPHYL") // กันกรณีผู้ใช้พิมพ์เอง
+        );
+      });
+
+      // drugs
+      const drugNames = Array.from(document.querySelectorAll('input[name="drugName[]"]')).map((input) => input.value.trim());
+      const drugDates = Array.from(document.querySelectorAll('input[name="drugDate[]"]')).map((input) => input.value);
+
+      const drugsList = drugNames
+        .map((name, i) => {
+          const date = drugDates[i] ? formatDateThai(drugDates[i]) : "ไม่ระบุวันที่";
+          return `${name || "ไม่ระบุชื่อยา"} (${date})`;
+        })
+        .join(", ");
+
+      // severity
+      const severity = document.getElementById("severity").value;
+
+      // score
+      let score = 0;
+      for (let i = 1; i <= 10; i++) {
+        const checked = document.querySelector(`input[name="q${i}"]:checked`);
+        const answer = checked ? checked.value : "ไม่ทราบ";
+        score += SCORING[i][answer] || 0;
+      }
+
+      // interpretation
+      let interpretation = "";
+      let interpretationColor = "";
+      if (score >= 9) {
+        interpretation = "ใช่แน่ (Definite)";
+        interpretationColor = "#dc3545";
+      } else if (score >= 5) {
+        interpretation = "น่าจะใช่ (Probable)";
+        interpretationColor = "#fd7e14";
+      } else if (score >= 1) {
+        interpretation = "อาจจะใช่ (Possible)";
+        interpretationColor = "#ffc107";
+      } else {
+        interpretation = "ไม่น่าจะใช่ (Doubtful)";
+        interpretationColor = "#28a745";
+      }
+
+      // Build result HTML (พื้นที่นี้จะถูก export เป็น PDF)
+      const now = new Date();
+      const generatedAt = formatDateTimeThai(now);
+
+      const resultContent = document.getElementById("resultContent");
+      resultContent.innerHTML = `
+        <div style="background:white; padding:20px; border-radius:8px; margin-bottom:15px; text-align:left;">
+          <h3 style="color:var(--primary); margin-bottom:12px;">ข้อมูลผู้ป่วย</h3>
+          <p><strong>HN:</strong> ${escapeHtml(hn)}</p>
+          <p><strong>ชื่อ-นามสกุล:</strong> ${escapeHtml(firstName)} ${escapeHtml(lastName)}</p>
+          <p><strong>เบอร์โทร:</strong> ${escapeHtml(phone)}</p>
+          <p><strong>ประเภทผื่นแพ้ยา/อาการ:</strong> ${escapeHtml(symptomsText)}</p>
+          <p><strong>ระดับความรุนแรง (จากผู้ประเมิน):</strong> ${escapeHtml(severity)}</p>
+          <p><strong>รายการยาที่สงสัย:</strong> ${escapeHtml(drugsList)}</p>
+          <p class="muted" style="margin-top:10px;">วันที่สร้างรายงาน: ${escapeHtml(generatedAt)}</p>
+        </div>
+
+        <div class="score-box">คะแนน Naranjo: ${score} คะแนน</div>
+
+        <div style="background:${interpretationColor}; color:white; padding:18px; border-radius:8px; font-size:20px; font-weight:700; text-align:center;">
+          ผลการประเมิน: ${escapeHtml(interpretation)}
+        </div>
+
+        <div style="margin-top:16px; padding:15px; background:#f8f9fa; border-radius:8px; text-align:left;">
+          <h4 style="color:var(--primary); margin-bottom:10px;">คำแนะนำ (เชิงระบบ)</h4>
+          <ul style="line-height:1.8; color:#333; padding-left:18px;">
+            <li>บันทึกข้อมูลการแพ้ยาในระบบเวชระเบียน/ระบบบริการ</li>
+            <li>ให้คำแนะนำผู้ป่วยหลีกเลี่ยงยาที่สงสัย และพิจารณาระบุ “ยาทดแทน”</li>
+            <li>ทบทวนสาเหตุอื่น (differential diagnosis) และปัจจัยร่วม (เช่น การติดเชื้อ, โรคร่วม)</li>
+            <li>ในกรณีรุนแรง/คุกคามชีวิต พิจารณาส่งต่อแพทย์/หอผู้ป่วยที่เหมาะสม และรายงานเหตุการณ์ไม่พึงประสงค์</li>
+            ${hasEmergencySymptom ? `<li style="color:#b91c1c; font-weight:800;">⚠️ พบอาการ/ระดับที่เข้าข่ายฉุกเฉิน กรุณาส่งต่อแพทย์ทันที!</li>` : ``}
+          </ul>
+          <div class="muted" style="margin-top:10px;">
+            หมายเหตุ: คะแนน Naranjo เป็น “ความน่าจะเป็น” ของความสัมพันธ์ยา-อาการ ไม่ใช่การยืนยันสาเหตุโดยสมบูรณ์
+          </div>
+        </div>
+
+        <div style="background:white; padding:20px; border-radius:8px; margin-top:15px; text-align:left; border:1px solid #e5e7eb;">
+          <h3 style="color:var(--primary); margin-bottom:12px;">ผู้ประเมิน (เภสัชกร)</h3>
+          <p><strong>ชื่อ-นามสกุล:</strong> ${escapeHtml(assessorName)}</p>
+          <p><strong>เลขใบอนุญาต:</strong> ${assessorLicense ? escapeHtml(assessorLicense) : "ไม่ระบุ"}</p>
+          <p><strong>หมายเหตุผู้ประเมิน:</strong> ${assessorNote ? escapeHtml(assessorNote).replace(/\n/g, "<br/>") : "ไม่มี"}</p>
+        </div>
+
+        <div class="footer-note">
+          เว็บไซต์นี้พัฒนา โดย ภก.บรรณสรณ์ เตชะจำเริญสุข ผู้ใช้งานควรตรวจสอบความถูกต้องอีกครั้ง หากพบปัญหาการใช้งานหรือมีข้อเสนอแนะติดต่อได้ที่
+          <strong>bunnasornt@gmail.com</strong>
+        </div>
+      `;
+
+      document.getElementById("result").classList.add("show");
+      document.getElementById("result").scrollIntoView({ behavior: "smooth" });
+    });
+
+    // ========== PDF Export ==========
+    async function exportPDF() {
+      // ให้แน่ใจว่า font โหลดแล้ว (สำคัญกับ html2canvas)
+      await document.fonts.ready;
+
+      const pdfArea = document.getElementById("pdfArea");
+
+      // ตั้งชื่อไฟล์จาก HN + เวลา
+      const hn = (document.getElementById("hn").value || "HN").trim().replace(/\s+/g, "_");
+      const ts = new Date();
+      const fileName = `ADR_Naranjo_${hn}_${ts.getFullYear()}-${pad2(ts.getMonth() + 1)}-${pad2(ts.getDate())}_${pad2(ts.getHours())}${pad2(ts.getMinutes())}.pdf`;
+
+      const options = {
+        margin: [10, 10, 10, 10], // mm (บน ขวา ล่าง ซ้าย)
+        filename: fileName,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          letterRendering: true,
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["css", "legacy"] },
+      };
+
+      try {
+        // บังคับใช้ฟอนต์ในพื้นที่ export
+        const prevFont = pdfArea.style.fontFamily;
+        pdfArea.style.fontFamily = 'SarabunNew, Sarabun, sans-serif';
+
+        await html2pdf().set(options).from(pdfArea).save();
+
+        pdfArea.style.fontFamily = prevFont;
+      } catch (err) {
+        console.error(err);
+        alert("ไม่สามารถสร้าง PDF ได้ กรุณาลองใหม่อีกครั้ง (แนะนำใช้ Chrome/Edge เวอร์ชันล่าสุด)");
+      }
+    }
+
+    // ========== Utilities ==========
+    function escapeHtml(str) {
+      return String(str || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function pad2(n) {
+      return String(n).padStart(2, "0");
+    }
+
+    function formatDateThai(yyyy_mm_dd) {
+      // input: 2025-12-27
+      const parts = String(yyyy_mm_dd || "").split("-");
+      if (parts.length !== 3) return "ไม่ระบุวันที่";
+      const [y, m, d] = parts.map((x) => parseInt(x, 10));
+      if (!y || !m || !d) return "ไม่ระบุวันที่";
+      // แสดงเป็น dd/mm/yyyy (คง Gregorian เพื่อสื่อสารในคลินิกได้ง่าย)
+      return `${pad2(d)}/${pad2(m)}/${y}`;
+    }
+
+    function formatDateTimeThai(dateObj) {
+      const d = dateObj;
+      const day = pad2(d.getDate());
+      const mon = pad2(d.getMonth() + 1);
+      const yr = d.getFullYear();
+      const hh = pad2(d.getHours());
+      const mm = pad2(d.getMinutes());
+      return `${day}/${mon}/${yr} ${hh}:${mm} น.`;
+    }
+
+    // ทำให้การ์ดเริ่มต้นสะท้อนสถานะ checkbox (กรณี browser restore)
+    window.addEventListener("load", () => {
+      document.querySelectorAll(".symptom-card").forEach((card) => {
+        const cb = card.querySelector('input[type="checkbox"]');
+        if (cb && cb.checked) card.classList.add("selected");
+      });
+    });
+  </script>
+</body>
+</html>
