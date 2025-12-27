@@ -5,90 +5,180 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ระบบประเมินการแพ้ยา - Naranjo Algorithm</title>
 
-  <!-- Sarabun (TH Sarabun New) via Google Fonts -->
+  <!-- Sarabun (TH Sarabun New) from Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- html2pdf (bundles html2canvas + jsPDF) -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <style>
+    /* -------- Base Reset -------- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    /* -------- Font Setup (SarabunNew alias) -------- */
+    :root{
+      --brand: #667eea;
+      --brand2: #764ba2;
+      --text: #2b2b2b;
+      --muted: #666;
+      --bg: #f6f7fb;
+
+      /* Comfortable font sizes */
+      --fs-base: 16px;
+      --fs-sm: 14px;
+      --fs-xs: 12.5px;
+      --fs-h1: 30px;
+      --fs-h2: 20px;
+      --fs-h3: 18px;
+      --radius: 14px;
+    }
+
+    /* Make Sarabun act as "SarabunNew" for the page */
     body {
-      font-family: 'Sarabun', 'Segoe UI', Tahoma, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: "SarabunNew", "Sarabun", "Segoe UI", Tahoma, sans-serif;
+      font-size: var(--fs-base);
+      line-height: 1.6;
+      color: var(--text);
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand2) 100%);
       min-height: 100vh;
       padding: 20px;
     }
 
+    /* Alias font-family name */
+    @font-face {
+      font-family: "SarabunNew";
+      src: local("Sarabun");
+      font-style: normal;
+      font-weight: 400;
+    }
+
     .container {
-      max-width: 1000px;
+      max-width: 1050px;
       margin: 0 auto;
       background: white;
-      border-radius: 15px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-      padding: 30px;
+      border-radius: var(--radius);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+      padding: 28px;
     }
 
-    h1 { color: #667eea; text-align: center; margin-bottom: 10px; font-size: 28px; }
-    .subtitle { text-align: center; color: #666; margin-bottom: 30px;font-size: 24px; }
+    h1 {
+      color: var(--brand);
+      text-align: center;
+      margin-bottom: 6px;
+      font-size: var(--fs-h1);
+      letter-spacing: 0.2px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 22px;
+      font-size: var(--fs-sm);
+    }
 
     .section {
-      margin-bottom: 30px;
-      padding: 20px;
+      margin-bottom: 22px;
+      padding: 18px;
       background: #f8f9fa;
-      border-radius: 10px;
-      border-left: 4px solid #667eea;
+      border-radius: 12px;
+      border-left: 4px solid var(--brand);
     }
 
-    .section-title { color: #333; font-size: 28px; margin-bottom: 15px; font-weight: 600; }
+    .section-title {
+      color: #333;
+      font-size: var(--fs-h2);
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
 
-    .form-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; color: #555; font-weight: 500; }
+    .form-group { margin-bottom: 14px; }
 
-    input[type="text"],
-    input[type="date"],
-    select,
-    textarea {
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: #444;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    input[type="text"], input[type="date"], select, textarea {
       width: 100%;
-      padding: 10px;
-      border: 2px solid #ddd;
-      border-radius: 5px;
-      font-size: 36px;
-      transition: border-color 0.3s;
-      font-family: inherit;
+      padding: 10px 12px;
+      border: 2px solid #e1e1e1;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: white;
+      font-family: "SarabunNew", "Sarabun", sans-serif;
     }
 
-    textarea { min-height: 80px; resize: vertical; }
+    textarea { min-height: 70px; resize: vertical; }
 
     input:focus, select:focus, textarea:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
     }
 
+    .patient-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .alert {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      font-size: var(--fs-sm);
+    }
+
+    /* -------- Drugs -------- */
     .drug-entry {
       background: white;
-      padding: 15px;
+      padding: 14px;
       margin-bottom: 10px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
+      border-radius: 12px;
+      border: 1px solid #e6e6e6;
       position: relative;
     }
 
-    .drug-entry-title { font-weight: 600; color: #667eea; margin-bottom: 10px; }
-
-    .add-btn, .remove-btn, .submit-btn, .pdf-btn, .reset-btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 36px;
-      font-weight: 500;
-      transition: all 0.3s;
-      font-family: inherit;
+    .drug-entry-title {
+      font-weight: 700;
+      color: var(--brand);
+      margin-bottom: 10px;
+      font-size: 16px;
     }
 
-    .add-btn { background: #28a745; color: white; margin-top: 10px; }
+    /* -------- Buttons -------- */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .add-btn, .remove-btn, .submit-btn, .secondary-btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 700;
+      transition: transform 0.05s, background 0.2s, opacity 0.2s;
+      font-family: "SarabunNew", "Sarabun", sans-serif;
+    }
+
+    .add-btn { background: #28a745; color: white; }
     .add-btn:hover { background: #218838; }
+
+    .secondary-btn { background: #343a40; color: white; }
+    .secondary-btn:hover { background: #23272b; }
 
     .remove-btn {
       background: #dc3545;
@@ -96,208 +186,294 @@
       position: absolute;
       top: 10px;
       right: 10px;
-      padding: 5px 15px;
-     font-size: 24px;
+      padding: 6px 12px;
+      font-size: 14px;
+      border-radius: 10px;
     }
     .remove-btn:hover { background: #c82333; }
 
     .submit-btn {
-      background: #667eea;
+      background: var(--brand);
       color: white;
       width: 100%;
-      padding: 15px;
-      font-size: 22px;
-      margin-top: 20px;
+      padding: 14px;
+      font-size: 18px;
+      margin-top: 10px;
     }
     .submit-btn:hover { background: #5568d3; }
+    .add-btn:active, .secondary-btn:active, .submit-btn:active, .remove-btn:active { transform: translateY(1px); }
 
+    /* -------- Questions -------- */
     .question {
       background: white;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
+      padding: 14px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      border: 1px solid #e6e6e6;
     }
+    .question-text {
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #333;
+      font-size: 16px;
+    }
+    .radio-group {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+    }
+    .radio-option input[type="radio"] { cursor: pointer; }
 
-    .question-text { font-weight: 500; margin-bottom: 10px; color: #333; }
-
-    .radio-group { display: flex; gap: 20px; flex-wrap: wrap; }
-    .radio-option { display: flex; align-items: center; gap: 5px; }
-    .radio-option input[type="radio"] { width: auto; cursor: pointer; }
-    .radio-option label { margin: 0; cursor: pointer; font-weight: normal; }
-
+    /* -------- Symptoms Grid -------- */
     .checkbox-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
       gap: 12px;
     }
 
     .symptom-card {
       background: white;
       padding: 12px;
-      border-radius: 8px;
-      border: 2px solid #ddd;
+      border-radius: 12px;
+      border: 2px solid #e1e1e1;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
       position: relative;
     }
+
     .symptom-card:hover {
-      border-color: #667eea;
-      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+      border-color: var(--brand);
+      box-shadow: 0 2px 10px rgba(102,126,234,0.18);
     }
-    .symptom-card.selected { border-color: #667eea; background: #e7f3ff; }
-    .symptom-card input[type="checkbox"] { position: absolute; opacity: 0; }
+
+    .symptom-card.selected {
+      border-color: var(--brand);
+      background: #eaf1ff;
+    }
+
+    .symptom-card input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
 
     .symptom-name {
-      font-weight: 600; color: #333; margin-bottom: 5px;
-      display: flex; align-items: center; gap: 8px;
+      font-weight: 800;
+      color: #333;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
     }
-    .symptom-name::before { content: "☐"; font-size: 36px; color: #999; }
-    .symptom-card.selected .symptom-name::before { content: "☑"; color: #667eea; }
 
-    .symptom-description { font-size: 18px; color: #666; line-height: 1.4; }
+    .symptom-name::before {
+      content: "☐";
+      font-size: 20px;
+      color: #999;
+      line-height: 1;
+    }
+
+    .symptom-card.selected .symptom-name::before {
+      content: "☑";
+      color: var(--brand);
+    }
+
+    .symptom-description {
+      font-size: var(--fs-sm);
+      color: #555;
+      line-height: 1.45;
+      margin-bottom: 6px;
+    }
 
     .severity-badge {
       display: inline-block;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      margin-top: 5px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
     }
     .severity-mild { background: #d4edda; color: #155724; }
     .severity-moderate { background: #fff3cd; color: #856404; }
     .severity-severe { background: #f8d7da; color: #721c24; }
     .severity-emergency { background: #dc3545; color: white; }
 
+    .tooltip { position: relative; display: inline-block; }
     .info-icon {
-      display: inline-block;
-      width: 16px; height: 16px;
-      background: #667eea;
+      display: inline-flex;
+      width: 18px;
+      height: 18px;
+      background: var(--brand);
       color: white;
       border-radius: 50%;
-      text-align: center;
-      line-height: 16px;
-      font-size: 22px;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
       cursor: help;
-      margin-left: 5px;
+      font-weight: 800;
     }
-
-    .tooltip { position: relative; display: inline-block; }
     .tooltip .tooltiptext {
       visibility: hidden;
-      width: 300px;
-      background-color: #333;
+      width: 310px;
+      background-color: #2f2f2f;
       color: #fff;
       text-align: left;
-      border-radius: 6px;
-      padding: 10px;
-      position: absolute;
-      z-index: 1;
-      bottom: 125%;
-      left: 50%;
-      margin-left: -150px;
-      opacity: 0;
-      transition: opacity 0.3s;
-      font-size: 18px;
-      line-height: 1.6;
-    }
-    .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
-
-    .result {
-      display: none;
-      background: #e7f3ff;
-      padding: 25px;
       border-radius: 10px;
-      margin-top: 30px;
-      border: 2px solid #667eea;
+      padding: 10px 12px;
+      position: absolute;
+      z-index: 2;
+      bottom: 135%;
+      left: 50%;
+      margin-left: -155px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-size: 13px;
+      line-height: 1.55;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.25);
     }
-    .result.show { display: block; }
-
-    .result-title { color: #667eea; font-size: 24px; margin-bottom: 15px; text-align: center; }
-    .result-content { font-size: 22px; color: #333; text-align: center; }
-
-    .score-box {
-      background: #667eea;
-      color: white;
-      padding: 15px;
-      border-radius: 8px;
-      margin: 15px 0;
-      text-align: center;
-      font-size: 36px;
-      font-weight: 600;
-    }
-
-    .patient-info {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 15px;
-    }
-
-    .alert {
-      background: #fff3cd;
-      border: 1px solid #ffc107;
-      color: #856404;
-      padding: 12px;
-      border-radius: 5px;
-      margin-bottom: 15px;
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
     }
 
     .legend {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-top: 10px;
+      margin-top: 12px;
       padding: 10px;
       background: white;
-      border-radius: 5px;
-      font-size: 22px;
+      border-radius: 12px;
+      font-size: 13px;
+      border: 1px dashed #ddd;
     }
+    .legend-item { display: flex; align-items: center; gap: 8px; }
 
-    .legend-item { display: flex; align-items: center; gap: 5px; }
-
-    .custom-symptom-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 12px;
+    /* -------- Result -------- */
+    .result {
+      display: none;
+      background: #e7f3ff;
+      padding: 18px;
+      border-radius: 12px;
+      margin-top: 18px;
+      border: 2px solid var(--brand);
     }
+    .result.show { display: block; }
 
-    .footer-note {
-      margin-top: 20px;
-      font-size: 22px;
-      color: #555;
+    .result-title {
+      color: var(--brand);
+      font-size: 24px;
+      margin-bottom: 12px;
       text-align: center;
-      line-height: 1.6;
-      padding-top: 10px;
-      border-top: 1px solid #eee;
+      font-weight: 900;
     }
 
-    .action-row {
+    .score-box {
+      background: var(--brand);
+      color: white;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin: 14px 0;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .result-actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       justify-content: center;
-      margin-top: 20px;
+      margin-top: 12px;
     }
 
-    .pdf-btn {
-      background: #0d6efd;
-      color: white;
-      padding: 10px 18px;
+    .footer-note {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid #e7e7e7;
+      color: #666;
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: center;
     }
-    .pdf-btn:hover { background: #0b5ed7; }
 
-    .reset-btn {
-      background: #6c757d;
-      color: white;
-      padding: 10px 18px;
+    /* -------- Report Area (for PDF only) -------- */
+    #reportArea {
+      display: none;
+      padding: 18px;
+      font-family: "SarabunNew", "Sarabun", sans-serif;
+      color: #222;
     }
-    .reset-btn:hover { background: #5c636a; }
+
+    #reportArea h2, #reportArea h3 {
+      margin-bottom: 8px;
+      color: #222;
+    }
+
+    .report-card {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 14px;
+      font-size: 15px;
+    }
+
+    .report-grid div strong { color: #111; }
+
+    .report-interpretation {
+      border-radius: 12px;
+      padding: 14px;
+      color: #fff;
+      font-weight: 900;
+      font-size: 18px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .report-recommend {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #f7f7f7;
+      border: 1px solid #e5e5e5;
+      font-size: 15px;
+    }
+
+    .report-footer {
+      margin-top: 14px;
+      font-size: 12.5px;
+      color: #666;
+      border-top: 1px dashed #ccc;
+      padding-top: 10px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    /* -------- Print: print only reportArea -------- */
+    @media print {
+      body { background: white; padding: 0; }
+      .container { box-shadow: none; border-radius: 0; padding: 0; }
+      #assessmentForm, #result, .footer-note { display: none !important; }
+      #reportArea { display: block !important; }
+    }
 
     @media (max-width: 768px) {
       .checkbox-grid { grid-template-columns: 1fr; }
       .patient-info { grid-template-columns: 1fr; }
-      .custom-symptom-grid { grid-template-columns: 1fr; }
+      .report-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -314,19 +490,19 @@
         <div class="patient-info">
           <div class="form-group">
             <label for="hn">HN:</label>
-            <input type="text" id="hn" name="hn" required>
+            <input type="text" id="hn" name="hn" required />
           </div>
           <div class="form-group">
             <label for="firstName">ชื่อ:</label>
-            <input type="text" id="firstName" name="firstName" required>
+            <input type="text" id="firstName" name="firstName" required />
           </div>
           <div class="form-group">
             <label for="lastName">นามสกุล:</label>
-            <input type="text" id="lastName" name="lastName" required>
+            <input type="text" id="lastName" name="lastName" required />
           </div>
           <div class="form-group">
             <label for="phone">เบอร์โทรศัพท์:</label>
-            <input type="text" id="phone" name="phone" required>
+            <input type="text" id="phone" name="phone" required />
           </div>
         </div>
       </div>
@@ -335,7 +511,7 @@
       <div class="section">
         <h2 class="section-title">💊 ประเภทผื่นแพ้ยา</h2>
         <div class="alert">
-          กรุณาเลือกประเภทผื่นแพ้ยาที่พบ (เลือกได้มากกว่า 1 ข้อ) - คลิกที่การ์ดเพื่อดูรายละเอียด
+          กรุณาเลือกประเภทผื่นแพ้ยาที่พบ (เลือกได้มากกว่า 1 ข้อ) — คลิกที่การ์ดเพื่อดูรายละเอียด
         </div>
 
         <div class="checkbox-grid" id="symptomsGrid">
@@ -353,7 +529,7 @@
                 </span>
               </span>
             </div>
-            <div class="symptom-description">ผื่นราบและตุ่มนูนสีแดงผสมกัน - พบบ่อยที่สุด</div>
+            <div class="symptom-description">ผื่นราบและตุ่มนูนสีแดงผสมกัน — พบบ่อยที่สุด</div>
             <span class="severity-badge severity-mild">บ่อยที่สุด</span>
           </div>
 
@@ -461,7 +637,7 @@
                 </span>
               </span>
             </div>
-            <div class="symptom-description">ผื่นรุนแรง ลอกผิวหนังและเยื่อบุ - ฉุกเฉิน!</div>
+            <div class="symptom-description">ผื่นรุนแรง ลอกผิวหนังและเยื่อบุ — ฉุกเฉิน!</div>
             <span class="severity-badge severity-emergency">ฉุกเฉิน!</span>
           </div>
 
@@ -491,31 +667,31 @@
           <div class="legend-item"><span class="severity-badge severity-emergency">ฉุกเฉิน/อันตราย</span></div>
         </div>
 
-        <!-- เพิ่มอาการเอง -->
-        <div style="margin-top: 18px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e6e6e6;">
-          <h3 style="color:#667eea; margin-bottom: 10px; font-size: 36px;">➕ เพิ่มอาการแพ้ยาอื่นๆ (ผู้ใช้กำหนดเอง)</h3>
-          <div class="custom-symptom-grid">
+        <!-- Add custom symptom -->
+        <div class="section" style="margin-top: 14px; background:#ffffff; border-left-color:#28a745;">
+          <h2 class="section-title" style="margin-bottom:8px;">➕ เพิ่มอาการแพ้ยาอื่น ๆ (ผู้ใช้กำหนดเอง)</h2>
+          <div class="patient-info">
             <div class="form-group">
-              <label for="customSymptomName">ชื่ออาการ/ผื่น:</label>
-              <input type="text" id="customSymptomName" placeholder="เช่น Pruritus without rash">
+              <label for="customSymptomName">ชื่ออาการ (จำเป็น):</label>
+              <input type="text" id="customSymptomName" placeholder="เช่น ผื่นตุ่มน้ำ, ปากบวม, คันรุนแรง">
             </div>
             <div class="form-group">
               <label for="customSymptomSeverity">ระดับป้ายกำกับ:</label>
               <select id="customSymptomSeverity">
-                <option value="mild">บ่อย/เล็กน้อย</option>
-                <option value="moderate">ปานกลาง</option>
-                <option value="severe">รุนแรง</option>
-                <option value="emergency">ฉุกเฉิน</option>
+                <option value="mild">mild</option>
+                <option value="moderate" selected>moderate</option>
+                <option value="severe">severe</option>
+                <option value="emergency">emergency</option>
               </select>
             </div>
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label for="customSymptomDesc">คำอธิบายเพิ่มเติม:</label>
-              <textarea id="customSymptomDesc" placeholder="ลักษณะ, การกระจาย, อาการร่วม, ข้อควรระวัง ฯลฯ"></textarea>
-            </div>
           </div>
-          <button type="button" class="add-btn" onclick="addCustomSymptom()">เพิ่มอาการ</button>
-          <div style="margin-top: 10px; font-size: 22px; color: #666;">
-            * อาการที่เพิ่มจะถูกนับรวมในการรายงานผล (แยกจากคะแนน Naranjo ซึ่งยังคงเป็น 10 ข้อมาตรฐาน)
+          <div class="form-group">
+            <label for="customSymptomDesc">คำอธิบาย (ไม่บังคับ):</label>
+            <textarea id="customSymptomDesc" placeholder="คำอธิบายสั้น ๆ เพื่อช่วยการตัดสินใจ/การสื่อสาร"></textarea>
+          </div>
+          <div class="btn-row">
+            <button type="button" class="add-btn" onclick="addCustomSymptom()">เพิ่มอาการ</button>
+            <button type="button" class="secondary-btn" onclick="clearCustomSymptomInputs()">ล้างช่องเพิ่มอาการ</button>
           </div>
         </div>
       </div>
@@ -553,29 +729,11 @@
         </div>
       </div>
 
-      <!-- ผู้ประเมิน -->
-      <div class="section">
-        <h2 class="section-title">👩‍⚕️ เภสัชกรผู้ประเมิน</h2>
-        <div class="patient-info">
-          <div class="form-group">
-            <label for="assessorName">ชื่อ-นามสกุลผู้ประเมิน:</label>
-            <input type="text" id="assessorName" required placeholder="เช่น ภก. ...">
-          </div>
-          <div class="form-group">
-            <label for="assessorLicense">เลขที่ใบอนุญาต (ถ้ามี):</label>
-            <input type="text" id="assessorLicense" placeholder="Optional">
-          </div>
-        </div>
-      </div>
-
       <!-- Naranjo Algorithm Questions -->
       <div class="section">
         <h2 class="section-title">📝 แบบประเมิน Naranjo Algorithm</h2>
-        <div class="alert">
-          กรุณาตอบคำถามทั้ง 10 ข้อ เพื่อประเมินความเป็นไปได้ของการแพ้ยา (สเกล Naranjo แปลผล: ≥9 Definite, 5–8 Probable, 1–4 Possible, ≤0 Doubtful) :contentReference[oaicite:2]{index=2}
-        </div>
+        <div class="alert">กรุณาตอบคำถามทั้ง 10 ข้อ เพื่อประเมินความเป็นไปได้ของการแพ้ยา</div>
 
-        <!-- Q1 - Q10 (เหมือนเดิม) -->
         <div class="question">
           <div class="question-text">1. มีรายงานการแพ้ยาชนิดนี้มาก่อนหรือไม่?</div>
           <div class="radio-group">
@@ -667,35 +825,59 @@
         </div>
       </div>
 
+      <!-- เภสัชกรผู้ประเมิน (ส่วนท้าย) -->
+      <div class="section">
+        <h2 class="section-title">👨‍⚕️ เภสัชกรผู้ประเมิน</h2>
+        <div class="patient-info">
+          <div class="form-group">
+            <label for="assessorName">ชื่อ-นามสกุล (จำเป็น):</label>
+            <input type="text" id="assessorName" required placeholder="เช่น ภก.ชื่อ นามสกุล" />
+          </div>
+          <div class="form-group">
+            <label for="assessorLicense">เลขใบประกอบวิชาชีพ (ไม่บังคับ):</label>
+            <input type="text" id="assessorLicense" placeholder="เช่น ภ.XXXXXX" />
+          </div>
+        </div>
+      </div>
+
       <button type="submit" class="submit-btn">📊 ประเมินผล</button>
     </form>
 
-    <!-- ผลการประเมิน -->
+    <!-- ผลการประเมิน (แสดงบนหน้าเว็บ) -->
     <div id="result" class="result">
       <h2 class="result-title">ผลการประเมิน</h2>
+      <div id="resultContent"></div>
 
-      <!-- เฉพาะส่วนนี้จะถูกพิมพ์/บันทึกเป็น PDF -->
-      <div id="reportArea"></div>
-
-      <div class="action-row">
-        <button type="button" class="pdf-btn" onclick="printReportOnly()">🖨️ บันทึกรายงานเป็น PDF</button>
-        <button type="button" class="reset-btn" onclick="resetAll()">🔄 Reset</button>
+      <div class="result-actions">
+        <button type="button" class="submit-btn" style="width:auto; padding:10px 16px;" onclick="generatePDF()">
+          📄 สร้างรายงาน PDF
+        </button>
+        <button type="button" class="secondary-btn" onclick="resetAll()">
+          🔄 Reset / เคลียร์ข้อมูล
+        </button>
+        <button type="button" class="secondary-btn" onclick="window.print()">
+          🖨️ พิมพ์ (เฉพาะรายงาน)
+        </button>
       </div>
     </div>
 
+    <!-- Report Area (ใช้สำหรับ PDF/Print เท่านั้น) -->
+    <div id="reportArea" aria-hidden="true"></div>
+
     <div class="footer-note">
-      เว็บไซต์นี้พัฒนา โดย ภก.บรรณสรณ์ เตชะจำเริญสุข ผู้ใช้งานควรตรวจสอบความถูกต้องอีกครั้ง หากพบปัญหาการใช้งานหรือมีข้อเสนอแนะติดต่อได้ที่ bunnasornt@gmail.com
+      เว็บไซต์นี้พัฒนา โดย ภก.บรรณสรณ์ เตชะจำเริญสุข ผู้ใช้งานควรตรวจสอบความถูกต้องอีกครั้ง
+      หากพบปัญหาการใช้งานหรือมีข้อเสนอแนะติดต่อได้ที่ bunnasornt@gmail.com
     </div>
   </div>
 
   <script>
+    /* ---------------- Drug dynamic ---------------- */
     let drugCount = 1;
-    let customSymptomCount = 0;
 
     function toggleSymptom(card, checkboxId) {
       const checkbox = document.getElementById(checkboxId);
       checkbox.checked = !checkbox.checked;
-      card.classList.toggle('selected', checkbox.checked);
+      card.classList.toggle('selected');
     }
 
     function addDrugEntry() {
@@ -719,7 +901,8 @@
     }
 
     function removeDrugEntry(button) {
-      if (document.querySelectorAll('.drug-entry').length > 1) {
+      const entries = document.querySelectorAll('.drug-entry');
+      if (entries.length > 1) {
         button.parentElement.remove();
         updateDrugNumbers();
       } else {
@@ -735,50 +918,77 @@
       drugCount = entries.length;
     }
 
-    function addCustomSymptom() {
-      const name = document.getElementById('customSymptomName').value.trim();
-      const desc = document.getElementById('customSymptomDesc').value.trim();
-      const sev = document.getElementById('customSymptomSeverity').value;
+    /* ---------------- Custom symptoms ---------------- */
+    let customSymptomCounter = 0;
 
-      if (!name) {
-        alert('กรุณาระบุชื่ออาการ/ผื่น');
+    function getSeverityMeta(level){
+      switch(level){
+        case "mild": return { badgeClass: "severity-mild", label: "mild" };
+        case "moderate": return { badgeClass: "severity-moderate", label: "moderate" };
+        case "severe": return { badgeClass: "severity-severe", label: "severe" };
+        case "emergency": return { badgeClass: "severity-emergency", label: "emergency" };
+        default: return { badgeClass: "severity-moderate", label: "moderate" };
+      }
+    }
+
+    function clearCustomSymptomInputs(){
+      document.getElementById("customSymptomName").value = "";
+      document.getElementById("customSymptomDesc").value = "";
+      document.getElementById("customSymptomSeverity").value = "moderate";
+    }
+
+    function addCustomSymptom(){
+      const name = (document.getElementById("customSymptomName").value || "").trim();
+      const desc = (document.getElementById("customSymptomDesc").value || "").trim();
+      const sev = document.getElementById("customSymptomSeverity").value;
+
+      if(!name){
+        alert("กรุณากรอกชื่ออาการ (จำเป็น)");
         return;
       }
 
-      customSymptomCount++;
-      const id = `customSymp${customSymptomCount}`;
+      customSymptomCounter++;
+      const id = `custom_symp_${customSymptomCounter}`;
+      const meta = getSeverityMeta(sev);
 
-      let badgeClass = 'severity-mild';
-      let badgeText = 'เล็กน้อย';
-      if (sev === 'moderate') { badgeClass = 'severity-moderate'; badgeText = 'ปานกลาง'; }
-      if (sev === 'severe') { badgeClass = 'severity-severe'; badgeText = 'รุนแรง'; }
-      if (sev === 'emergency') { badgeClass = 'severity-emergency'; badgeText = 'ฉุกเฉิน'; }
+      const grid = document.getElementById("symptomsGrid");
 
-      const grid = document.getElementById('symptomsGrid');
-      const card = document.createElement('div');
-      card.className = 'symptom-card';
-      card.setAttribute('onclick', `toggleSymptom(this, '${id}')`);
+      const card = document.createElement("div");
+      card.className = "symptom-card";
+      card.setAttribute("onclick", `toggleSymptom(this, '${id}')`);
       card.innerHTML = `
         <input type="checkbox" id="${id}" name="symptoms" value="${escapeHtml(name)}">
-        <div class="symptom-name">${escapeHtml(name)}</div>
-        <div class="symptom-description">${desc ? escapeHtml(desc) : 'อาการที่ผู้ใช้เพิ่มเอง'}</div>
-        <span class="severity-badge ${badgeClass}">${badgeText}</span>
+        <div class="symptom-name">
+          ${escapeHtml(name)}
+          ${desc ? `
+            <span class="tooltip">
+              <span class="info-icon">i</span>
+              <span class="tooltiptext">
+                <strong>รายละเอียด:</strong> ${escapeHtml(desc).replace(/\n/g,"<br>")}
+              </span>
+            </span>` : ""
+          }
+        </div>
+        <div class="symptom-description">
+          ${desc ? escapeHtml(desc) : "อาการเพิ่มเติม (ผู้ใช้กำหนดเอง)"}
+        </div>
+        <span class="severity-badge ${meta.badgeClass}">${meta.label}</span>
       `;
+
       grid.appendChild(card);
-
-      // clear inputs
-      document.getElementById('customSymptomName').value = '';
-      document.getElementById('customSymptomDesc').value = '';
-      document.getElementById('customSymptomSeverity').value = 'mild';
+      clearCustomSymptomInputs();
     }
 
-    function escapeHtml(str) {
-      return str.replace(/[&<>"']/g, function(m) {
-        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]);
-      });
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
 
-    // Naranjo Algorithm Scoring
+    /* ---------------- Naranjo scoring ---------------- */
     const SCORING = {
       1: { 'ใช่': 1, 'ไม่ใช่': 0, 'ไม่ทราบ': 0 },
       2: { 'ใช่': 2, 'ไม่ใช่': -1, 'ไม่ทราบ': 0 },
@@ -792,182 +1002,266 @@
       10:{ 'ใช่': 1, 'ไม่ใช่': 0, 'ไม่ทราบ': 0 }
     };
 
-    document.getElementById('assessmentForm').addEventListener('submit', function(e) {
-      e.preventDefault();
+    function interpretScore(score){
+      if (score >= 9)  return { text: "ใช่แน่ (Definite)", color: "#dc3545" };
+      if (score >= 5)  return { text: "น่าจะใช่ (Probable)", color: "#fd7e14" };
+      if (score >= 1)  return { text: "อาจจะใช่ (Possible)", color: "#ffc107" };
+      return { text: "ไม่น่าจะใช่ (Doubtful)", color: "#28a745" };
+    }
 
-      // Patient info
+    function isEmergencySymptoms(selectedSymptoms){
+      return selectedSymptoms.some(s =>
+        String(s).includes('SJS') ||
+        String(s).includes('TEN') ||
+        String(s).toLowerCase().includes('angioedema')
+      );
+    }
+
+    /* ---------------- Build report content ---------------- */
+    function buildReportData(){
       const hn = document.getElementById('hn').value.trim();
       const firstName = document.getElementById('firstName').value.trim();
       const lastName = document.getElementById('lastName').value.trim();
       const phone = document.getElementById('phone').value.trim();
+      const severity = document.getElementById('severity').value;
 
-      // Assessor
       const assessorName = document.getElementById('assessorName').value.trim();
       const assessorLicense = document.getElementById('assessorLicense').value.trim();
 
-      // Symptoms
       const selectedSymptoms = Array.from(document.querySelectorAll('input[name="symptoms"]:checked'))
         .map(cb => cb.value);
       const symptomsText = selectedSymptoms.length > 0 ? selectedSymptoms.join(', ') : 'ไม่ระบุ';
 
-      // Drugs
       const drugNames = Array.from(document.querySelectorAll('input[name="drugName[]"]')).map(i => i.value.trim());
       const drugDates = Array.from(document.querySelectorAll('input[name="drugDate[]"]')).map(i => i.value);
-      const drugsList = drugNames.map((name, i) => `${name || '-'} (${drugDates[i] || '-'})`).join(', ');
+      const drugsList = drugNames.map((name, idx) => `${name || "ไม่ระบุชื่อยา"} (${drugDates[idx] || "ไม่ระบุวันที่"})`).join(', ');
 
-      // Severity
-      const severity = document.getElementById('severity').value;
-
-      // Calculate Naranjo score
       let score = 0;
       for (let i = 1; i <= 10; i++) {
-        const selected = document.querySelector(`input[name="q${i}"]:checked`);
-        const answer = selected ? selected.value : 'ไม่ทราบ';
-        score += (SCORING[i][answer] || 0);
+        const checked = document.querySelector(`input[name="q${i}"]:checked`);
+        if(!checked) continue;
+        score += SCORING[i][checked.value] || 0;
       }
 
-      // Interpret
-      let interpretation = "";
-      let interpretationColor = "";
-      if (score >= 9) { interpretation = "ใช่แน่ (Definite)"; interpretationColor = "#dc3545"; }
-      else if (score >= 5) { interpretation = "น่าจะใช่ (Probable)"; interpretationColor = "#fd7e14"; }
-      else if (score >= 1) { interpretation = "อาจจะใช่ (Possible)"; interpretationColor = "#ffc107"; }
-      else { interpretation = "ไม่น่าจะใช่ (Doubtful)"; interpretationColor = "#28a745"; }
+      const interp = interpretScore(score);
 
-      const isEmergency = selectedSymptoms.some(s =>
-        s.includes('SJS') || s.includes('TEN') || s.includes('Angioedema')
-      );
+      return {
+        hn, firstName, lastName, phone,
+        severity,
+        assessorName, assessorLicense,
+        symptomsText, selectedSymptoms,
+        drugsList,
+        score,
+        interpretation: interp.text,
+        interpretationColor: interp.color,
+        emergency: isEmergencySymptoms(selectedSymptoms)
+      };
+    }
 
-      // Render report (ONLY this will be printed to PDF)
-      const reportArea = document.getElementById('reportArea');
-      reportArea.innerHTML = `
-        <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; text-align:left;">
-          <h3 style="color: #667eea; margin-bottom: 12px;">รายงานผลการประเมินการแพ้ยา (Naranjo)</h3>
+    function renderResultToPage(data){
+      const resultContent = document.getElementById('resultContent');
 
-          <div style="margin-bottom: 12px;">
-            <strong>ข้อมูลผู้ป่วย</strong><br>
-            HN: ${escapeHtml(hn)}<br>
-            ชื่อ-นามสกุล: ${escapeHtml(firstName)} ${escapeHtml(lastName)}<br>
-            เบอร์โทร: ${escapeHtml(phone)}<br>
-          </div>
+      const adviceEmergency = data.emergency
+        ? `<li style="color:#b00020; font-weight:900;">⚠️ พบอาการฉุกเฉิน/อันตราย แนะนำส่งต่อแพทย์ทันที</li>`
+        : ``;
 
-          <div style="margin-bottom: 12px;">
-            <strong>ข้อมูลการประเมิน</strong><br>
-            ประเภทผื่น/อาการแพ้ยา: ${escapeHtml(symptomsText)}<br>
-            ระดับความรุนแรง: ${escapeHtml(severity)}<br>
-            รายการยาที่สงสัย: ${escapeHtml(drugsList)}<br>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong>ผู้ประเมิน</strong><br>
-            เภสัชกรผู้ประเมิน: ${escapeHtml(assessorName)}${assessorLicense ? ` (ใบอนุญาต: ${escapeHtml(assessorLicense)})` : ''}<br>
-            วันที่ออกรายงาน: ${new Date().toLocaleString('th-TH')}
+      resultContent.innerHTML = `
+        <div style="background:#ffffff; padding:14px; border-radius:12px; border:1px solid #dfe6ff;">
+          <h3 style="color:#667eea; margin-bottom:10px; font-size:18px; font-weight:900;">สรุปข้อมูล</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; font-size:15px;">
+            <div><strong>HN:</strong> ${escapeHtml(data.hn)}</div>
+            <div><strong>เบอร์โทร:</strong> ${escapeHtml(data.phone)}</div>
+            <div><strong>ชื่อ-นามสกุล:</strong> ${escapeHtml(data.firstName)} ${escapeHtml(data.lastName)}</div>
+            <div><strong>ระดับความรุนแรง:</strong> ${escapeHtml(data.severity || "ไม่ระบุ")}</div>
+            <div style="grid-column:1 / -1;"><strong>ประเภทผื่นแพ้ยา:</strong> ${escapeHtml(data.symptomsText)}</div>
+            <div style="grid-column:1 / -1;"><strong>รายการยาที่สงสัย:</strong> ${escapeHtml(data.drugsList)}</div>
+            <div style="grid-column:1 / -1;"><strong>เภสัชกรผู้ประเมิน:</strong> ${escapeHtml(data.assessorName)} ${data.assessorLicense ? `(${escapeHtml(data.assessorLicense)})` : ""}</div>
           </div>
         </div>
 
-        <div style="background:#667eea;color:#fff;padding:14px;border-radius:8px;text-align:center;font-size:18px;font-weight:700;">
-          คะแนน Naranjo: ${score} คะแนน
+        <div class="score-box">คะแนน Naranjo: ${data.score} คะแนน</div>
+
+        <div style="background:${data.interpretationColor}; color:#fff; padding:14px; border-radius:12px; font-size:20px; font-weight:900; text-align:center;">
+          ผลการประเมิน: ${escapeHtml(data.interpretation)}
         </div>
 
-        <div style="margin-top:12px;background:${interpretationColor};color:#fff;padding:16px;border-radius:8px;font-size:20px;font-weight:700;text-align:center;">
-          ผลการประเมิน: ${escapeHtml(interpretation)}
-        </div>
-
-        <div style="margin-top: 16px; padding: 14px; background: #f8f9fa; border-radius: 8px; text-align:left;">
-          <h4 style="color: #667eea; margin-bottom: 8px;">ข้อเสนอแนะเชิงปฏิบัติ</h4>
-          <ul style="line-height: 1.8; color: #333; padding-left: 18px;">
-            <li>บันทึกข้อมูลการแพ้ยาในระบบ/เวชระเบียน และระบุยาที่สงสัยอย่างชัดเจน</li>
-            <li>ให้คำแนะนำผู้ป่วยหลีกเลี่ยงยาที่สงสัย และสังเกตอาการเตือน</li>
-            <li>พิจารณาส่งต่อ/ปรึกษาแพทย์เฉพาะทางตามความรุนแรงและบริบทผู้ป่วย</li>
-            <li>รายงานอาการไม่พึงประสงค์จากยา (โดยเฉพาะกรณีรุนแรง) ต่อหน่วยงานที่เกี่ยวข้อง</li>
-            ${isEmergency ? `<li style="color:#b00020;font-weight:800;">⚠️ พบสัญญาณฉุกเฉิน (เช่น SJS/TEN/Angioedema) แนะนำส่งต่อฉุกเฉินทันที</li>` : ''}
+        <div style="margin-top:12px; padding:12px; background:#f8f9fa; border-radius:12px; border:1px solid #e6e6e6;">
+          <h4 style="color:#667eea; margin-bottom:8px; font-size:16px; font-weight:900;">คำแนะนำเบื้องต้น</h4>
+          <ul style="line-height:1.8; padding-left:20px; font-size:15px;">
+            <li>บันทึกข้อมูลการแพ้ยาในระบบ/เวชระเบียน</li>
+            <li>แจ้งผู้ป่วยให้หลีกเลี่ยงยาที่สงสัยและยากลุ่มเดียวกัน (ตามดุลยพินิจ)</li>
+            <li>พิจารณาส่งต่อแพทย์เฉพาะทางหากมีอาการรุนแรงหรือมีระบบอวัยวะเกี่ยวข้อง</li>
+            <li>รายงานอาการแพ้ยาร้ายแรงต่อหน่วยงานที่เกี่ยวข้องตามแนวทางสถานพยาบาล</li>
+            ${adviceEmergency}
           </ul>
-          <div style="margin-top:10px;font-size:12px;color:#555;">
-            หมายเหตุ: คะแนน Naranjo เป็นเครื่องมือประเมินความเป็นไปได้ของ ADR/แพ้ยา ไม่ใช่การยืนยันสาเหตุแบบแน่นอน และควรใช้ร่วมกับดุลยพินิจทางคลินิก :contentReference[oaicite:3]{index=3}
+        </div>
+      `;
+    }
+
+    function renderReportArea(data){
+      const report = document.getElementById("reportArea");
+
+      const now = new Date();
+      const dt = now.toLocaleString("th-TH", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+
+      const emergencyLine = data.emergency
+        ? `<div style="margin-top:10px; color:#b00020; font-weight:900;">⚠️ พบอาการฉุกเฉิน/อันตราย แนะนำส่งต่อแพทย์ทันที</div>`
+        : ``;
+
+      report.innerHTML = `
+        <div style="font-family:'SarabunNew','Sarabun',sans-serif;">
+          <h2 style="text-align:center; font-weight:900; margin-bottom:4px;">รายงานผลการประเมินการแพ้ยา</h2>
+          <div style="text-align:center; font-size:13px; color:#666; margin-bottom:12px;">
+            Naranjo Adverse Drug Reaction Probability Scale • วันที่สร้างรายงาน: ${escapeHtml(dt)}
+          </div>
+
+          <div class="report-card">
+            <h3 style="font-size:17px; font-weight:900; margin-bottom:8px;">ข้อมูลผู้ป่วยและการประเมิน</h3>
+            <div class="report-grid">
+              <div><strong>HN:</strong> ${escapeHtml(data.hn)}</div>
+              <div><strong>เบอร์โทร:</strong> ${escapeHtml(data.phone)}</div>
+              <div><strong>ชื่อ:</strong> ${escapeHtml(data.firstName)}</div>
+              <div><strong>นามสกุล:</strong> ${escapeHtml(data.lastName)}</div>
+              <div><strong>ระดับความรุนแรง:</strong> ${escapeHtml(data.severity || "ไม่ระบุ")}</div>
+              <div><strong>เภสัชกรผู้ประเมิน:</strong> ${escapeHtml(data.assessorName)} ${data.assessorLicense ? `(${escapeHtml(data.assessorLicense)})` : ""}</div>
+              <div style="grid-column:1 / -1;"><strong>ประเภทผื่นแพ้ยา:</strong> ${escapeHtml(data.symptomsText)}</div>
+              <div style="grid-column:1 / -1;"><strong>รายการยาที่สงสัย:</strong> ${escapeHtml(data.drugsList)}</div>
+            </div>
+          </div>
+
+          <div class="report-card">
+            <h3 style="font-size:17px; font-weight:900; margin-bottom:8px;">ผลคะแนนและการแปลผล</h3>
+            <div style="display:flex; gap:10px; align-items:stretch; flex-wrap:wrap;">
+              <div style="flex:1; min-width:220px; border:1px solid #e5e5e5; border-radius:12px; padding:12px; text-align:center;">
+                <div style="font-size:13px; color:#666;">คะแนนรวม</div>
+                <div style="font-size:24px; font-weight:900;">${data.score}</div>
+              </div>
+              <div style="flex:2; min-width:260px;" class="report-interpretation">
+                ${escapeHtml(data.interpretation)}
+              </div>
+            </div>
+            ${emergencyLine}
+          </div>
+
+          <div class="report-recommend">
+            <div style="font-weight:900; margin-bottom:6px;">คำแนะนำเบื้องต้น</div>
+            <ol style="padding-left:18px; line-height:1.8;">
+              <li>บันทึกข้อมูลการแพ้ยาในระบบ/เวชระเบียน</li>
+              <li>แจ้งผู้ป่วยให้หลีกเลี่ยงยาที่สงสัยและยากลุ่มเดียวกัน (ตามดุลยพินิจ)</li>
+              <li>พิจารณาส่งต่อแพทย์เฉพาะทางหากมีอาการรุนแรงหรือมีระบบอวัยวะเกี่ยวข้อง</li>
+              <li>รายงานอาการแพ้ยาร้ายแรงต่อหน่วยงานที่เกี่ยวข้องตามแนวทางสถานพยาบาล</li>
+            </ol>
+          </div>
+
+          <div class="report-footer">
+            เว็บไซต์นี้พัฒนา โดย ภก.บรรณสรณ์ เตชะจำเริญสุข ผู้ใช้งานควรตรวจสอบความถูกต้องอีกครั้ง
+            หากพบปัญหาการใช้งานหรือมีข้อเสนอแนะติดต่อได้ที่ bunnasornt@gmail.com
           </div>
         </div>
       `;
+
+      // Set interpretation background color AFTER HTML is ready
+      const interpBox = report.querySelector(".report-interpretation");
+      if (interpBox) {
+        interpBox.style.background = data.interpretationColor;
+      }
+    }
+
+    /* ---------------- Form submit ---------------- */
+    document.getElementById('assessmentForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const data = buildReportData();
+      renderResultToPage(data);
+      renderReportArea(data);
 
       document.getElementById('result').classList.add('show');
       document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
     });
 
-    // Print ONLY reportArea (recommended on GitHub Pages; avoids jsPDF/html2canvas failures)
-    function printReportOnly() {
-      const reportArea = document.getElementById('reportArea');
-      if (!reportArea || !reportArea.innerHTML.trim()) {
-        alert('ยังไม่มีรายงาน กรุณากด "ประเมินผล" ก่อน');
-        return;
+    /* ---------------- PDF Generation (report only) ---------------- */
+    async function generatePDF(){
+      try{
+        // Ensure report is up to date
+        const data = buildReportData();
+        renderReportArea(data);
+
+        // wait for fonts
+        if (document.fonts && document.fonts.ready) {
+          await document.fonts.ready;
+        }
+
+        // check library
+        if (typeof html2pdf === "undefined") {
+          alert("ไม่สามารถโหลดเครื่องมือสร้าง PDF ได้ (html2pdf.js) กรุณารีเฟรชหน้าเว็บ หรือทดสอบใน Chrome/Edge เวอร์ชันล่าสุด");
+          return;
+        }
+
+        const report = document.getElementById("reportArea");
+        report.style.display = "block"; // must be visible for accurate render
+
+        const filename = `ADR_Naranjo_${(data.hn || "HN")}_${new Date().toISOString().slice(0,10)}.pdf`;
+
+        const opt = {
+          margin:       10,
+          filename:     filename,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak:    { mode: ['css', 'legacy'] }
+        };
+
+        await html2pdf().set(opt).from(report).save();
+
+        report.style.display = "none";
+      } catch (err){
+        console.error(err);
+        alert("ไม่สามารถสร้าง PDF ได้ กรุณาลองใหม่อีกครั้ง (แนะนำใช้ Chrome/Edge เวอร์ชันล่าสุด)");
+        // As a fallback, user can still print
       }
-
-      const w = window.open('', '_blank');
-      if (!w) {
-        alert('เบราว์เซอร์บล็อกหน้าต่างใหม่ กรุณาอนุญาต pop-up แล้วลองใหม่');
-        return;
-      }
-
-      // Build print-only HTML
-      const html = `
-        <!DOCTYPE html>
-        <html lang="th">
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>รายงานผลการประเมินการแพ้ยา (PDF)</title>
-          <link rel="preconnect" href="https://fonts.googleapis.com">
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-          <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-          <style>
-            body { font-family: 'Sarabun', sans-serif; background: #fff; margin: 0; padding: 18px; }
-            @page { size: A4; margin: 12mm; }
-            .footer-note { margin-top: 14px; font-size: 16px; color: #555; line-height: 1.6; border-top: 1px solid #eee; padding-top: 8px; }
-            /* ensure colors print */
-            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          </style>
-        </head>
-        <body>
-          ${reportArea.innerHTML}
-          <div class="footer-note">
-            เว็บไซต์นี้พัฒนา โดย ภก.บรรณสรณ์ เตชะจำเริญสุข ผู้ใช้งานควรตรวจสอบความถูกต้องอีกครั้ง หากพบปัญหาการใช้งานหรือมีข้อเสนอแนะติดต่อได้ที่ bunnasornt@gmail.com
-          </div>
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.print();
-              }, 300);
-            }
-          </script>
-        </body>
-        </html>
-      `;
-
-      w.document.open();
-      w.document.write(html);
-      w.document.close();
     }
 
-    function resetAll() {
-      // reset form
-      const form = document.getElementById('assessmentForm');
+    /* ---------------- Reset / Clear all ---------------- */
+    function resetAll(){
+      const form = document.getElementById("assessmentForm");
       form.reset();
 
-      // remove extra drug entries
-      const container = document.getElementById('drugsContainer');
-      const entries = Array.from(container.querySelectorAll('.drug-entry'));
-      entries.slice(1).forEach(e => e.remove());
+      // clear selected symptom styles
+      document.querySelectorAll(".symptom-card.selected").forEach(c => c.classList.remove("selected"));
+
+      // reset drugs to 1
+      const container = document.getElementById("drugsContainer");
+      container.innerHTML = `
+        <div class="drug-entry">
+          <div class="drug-entry-title">ยาที่ 1</div>
+          <div class="form-group">
+            <label>ชื่อยา:</label>
+            <input type="text" name="drugName[]" required>
+          </div>
+          <div class="form-group">
+            <label>วันที่ได้รับยา:</label>
+            <input type="date" name="drugDate[]" required>
+          </div>
+        </div>
+      `;
       drugCount = 1;
-      updateDrugNumbers();
 
-      // uncheck symptoms and remove selected class
-      document.querySelectorAll('input[name="symptoms"]').forEach(cb => cb.checked = false);
-      document.querySelectorAll('.symptom-card').forEach(card => card.classList.remove('selected'));
+      // remove custom symptoms that were added
+      document.querySelectorAll('[id^="custom_symp_"]').forEach(el => {
+        const card = el.closest(".symptom-card");
+        if (card) card.remove();
+      });
+      customSymptomCounter = 0;
+      clearCustomSymptomInputs();
 
-      // clear report + hide result
-      document.getElementById('reportArea').innerHTML = '';
-      document.getElementById('result').classList.remove('show');
+      // hide result + clear report
+      document.getElementById("result").classList.remove("show");
+      document.getElementById("resultContent").innerHTML = "";
+      document.getElementById("reportArea").innerHTML = "";
+      document.getElementById("reportArea").style.display = "none";
 
       // scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   </script>
 </body>
